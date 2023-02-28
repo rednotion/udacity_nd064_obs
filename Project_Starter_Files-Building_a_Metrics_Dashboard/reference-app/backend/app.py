@@ -3,6 +3,28 @@ from flask import Flask, render_template, request, jsonify
 import pymongo
 from flask_pymongo import PyMongo
 
+import logging
+from prometheus_flask_exporter import PrometheusMetrics
+from jaeger_client import Config
+
+# Tracing
+def init_tracer(service):
+    logging.getLogger("").handlers = []
+    logging.basicConfig(format="%(message)s", level=logging.DEBUG)
+
+    config = Config(
+        config={"sampler": {"type": "const", "param": 1,}, "logging": True,},
+        service_name=service,
+    )
+
+    # this call also sets opentracing.tracer
+    return config.initialize_tracer()
+
+tracer = init_tracer("backend")
+with tracer.start_span("first-span") as span:
+    span.set_tag("first-tag", "100")
+
+
 app = Flask(__name__)
 
 app.config["MONGO_DBNAME"] = "example-mongodb"
