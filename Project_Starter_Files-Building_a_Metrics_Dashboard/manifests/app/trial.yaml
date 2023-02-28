@@ -22,30 +22,38 @@ spec:
         app: trial
     spec:
       containers:
-      - name: trial
+      - env:
+        - name: JAEGER_HOST
+          value: simplest-query.default.svc.cluster.local
+        name: trial
         # We advise you to build, push and use your own image, instead of using instructor's image.
-        image: rednotion/udacity_nd064_obs_trial
-        # image: ghcr.io/jasonsmithio/trial:v1
+        image: ghcr.io/jasonsmithio/trial:v1
+        #image: rednotion/udacity_nd064_obs_trial
+        imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - name: trialport
+          containerPort: 8080
+          protocol: TCP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: trial-service
+  name: trial
 spec:
   selector:
     app: trial
   ports:
-    - port: 8082
-      targetPort: 8080
+    - name: trial
+      protocol: TCP
+      port: 8082
+      targetPort: trialport
   type: LoadBalancer
 ---
 # service for prometheus operator
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: trial-monitor
+  name: trial
   namespace: monitoring # same as prom operator
   labels:
     app: trial
@@ -55,7 +63,7 @@ spec:
     matchLabels:
       app: trial
   endpoints:
-  - port: 8080
+  - port: trial
     path: /metrics
     interval: 15s
   namespaceSelector:
