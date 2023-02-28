@@ -15,7 +15,8 @@ spec:
       containers:
       - name: frontend
         # We advise you to build, push and use your own image, instead of using instructor's image.
-        image: ghcr.io/jasonsmithio/myfrontend:v1
+        image: rednotion/udacity_nd064_obs_frontend
+        # image: ghcr.io/jasonsmithio/myfrontend:v1
         ports:
         - containerPort: 8080
 ---

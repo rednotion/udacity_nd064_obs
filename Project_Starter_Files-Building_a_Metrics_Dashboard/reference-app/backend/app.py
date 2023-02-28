@@ -26,6 +26,13 @@ with tracer.start_span("first-span") as span:
 
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
+metrics.info("app_info", "Backend info", version="1.0.3")
+
+by_path_counter = metrics.counter(
+    'by_path_counter', 'Request count by request paths',
+    labels={'path': lambda: request.path}
+)
 
 app.config["MONGO_DBNAME"] = "example-mongodb"
 app.config[
@@ -36,17 +43,20 @@ mongo = PyMongo(app)
 
 
 @app.route("/")
+@by_path_counter
 def homepage():
     return "Hello World"
 
 
 @app.route("/api")
+@by_path_counter
 def my_api():
     answer = "something"
     return jsonify(repsonse=answer)
 
 
 @app.route("/star", methods=["POST"])
+@by_path_counter
 def add_star():
     star = mongo.db.stars
     name = request.json["name"]

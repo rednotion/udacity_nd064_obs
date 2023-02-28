@@ -1,7 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: trial-app
+  name: trial
+  # add monitoring
+  annotations:
+    "sidecar.jaegertracing.io/inject": "true"
+    prometheus.io/scrape: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: trialport
+  labels:
+    name: trial
+    release: prometheus
 spec:
   replicas: 3
   selector:
@@ -15,7 +24,8 @@ spec:
       containers:
       - name: trial
         # We advise you to build, push and use your own image, instead of using instructor's image.
-        image: ghcr.io/jasonsmithio/trial:v1
+        image: rednotion/udacity_nd064_obs_trial
+        # image: ghcr.io/jasonsmithio/trial:v1
         ports:
         - containerPort: 8080
 ---
@@ -30,3 +40,24 @@ spec:
     - port: 8082
       targetPort: 8080
   type: LoadBalancer
+---
+# service for prometheus operator
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: trial-monitor
+  namespace: monitoring # same as prom operator
+  labels:
+    app: trial
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: trial
+  endpoints:
+  - port: 8080
+    path: /metrics
+    interval: 15s
+  namespaceSelector:
+    matchNames:
+    - default
